@@ -1,0 +1,194 @@
+mql5
+//+------------------------------------------------------------------+
+//|                                                         Williams Vix Fix MT4                                                      |
+//|                                                    Developer's Site: forexroboteasy.com                                           |
+//|                                                        Developed by: Forex Robot Easy Team                                     |
+//+------------------------------------------------------------------+
+
+// Input parameters
+input int TimePeriod = 22; // Time period for calculating the Vix Fix indicator
+input double ThresholdBuy = 0.5; // Threshold value for buy signals
+input double ThresholdSell = 0.2; // Threshold value for sell signals
+
+// Global variables
+double vixFix[]; // Array to store the calculated Vix Fix values
+bool buySignal[]; // Array to store buy signals
+bool sellSignal[]; // Array to store sell signals
+
+//+------------------------------------------------------------------+
+//| Custom indicator: Calculate the Williams Vix Fix indicator        |
+//+------------------------------------------------------------------+
+double CalculateVixFix()
+{
+   double highestClose = High[0];
+   double lowestClose = Low[0];
+   
+   for(int i = 1; i <= TimePeriod; i++)
+   {
+      if(High[i] > highestClose)
+         highestClose = High[i];
+         
+      if(Low[i] < lowestClose)
+         lowestClose = Low[i];
+   }
+   
+   double vixFixValue = (highestClose - Low[0]) / highestClose;
+   return vixFixValue;
+}
+
+//+------------------------------------------------------------------+
+//| Custom indicator: Retrieve highest closing price within time period|
+//+------------------------------------------------------------------+
+double GetHighestClose()
+{
+   double highestClose = High[0];
+   
+   for(int i = 1; i <= TimePeriod; i++)
+   {
+      if(High[i] > highestClose)
+         highestClose = High[i];
+   }
+   
+   return highestClose;
+}
+
+//+------------------------------------------------------------------+
+//| Custom indicator: Retrieve lowest price within time period         |
+//+------------------------------------------------------------------+
+double GetLowestPrice()
+{
+   double lowestPrice = Low[0];
+   
+   for(int i = 1; i <= TimePeriod; i++)
+   {
+      if(Low[i] < lowestPrice)
+         lowestPrice = Low[i];
+   }
+   
+   return lowestPrice;
+}
+
+//+------------------------------------------------------------------+
+//| Custom indicator: Calculate Vix Fix indicator                      |
+//+------------------------------------------------------------------+
+void CalculateVixFixIndicator()
+{
+   ArrayResize(vixFix, Bars);
+   
+   for(int i = 0; i < Bars; i++)
+   {
+      double highestClose = GetHighestClose();
+      double lowestPrice = GetLowestPrice();
+      
+      vixFix[i] = (highestClose - Low[i]) / highestClose;
+   }
+}
+
+//+------------------------------------------------------------------+
+//| Custom indicator: Display Vix Fix indicator on MT4 chart          |
+//+------------------------------------------------------------------+
+void DisplayVixFixIndicator()
+{
+   IndicatorSetInteger(INDICATOR_DIGITS, 4);
+   SetIndexStyle(0, DRAW_LINE);
+   SetIndexBuffer(0, vixFix);
+   SetIndexLabel(0, 'Vix Fix');
+   SetIndexShift(0, 0);
+   SetIndexEmptyValue(0, 0.0);
+}
+
+//+------------------------------------------------------------------+
+//| Custom indicator: Check for high market volatility                |
+//+------------------------------------------------------------------+
+void CheckVolatility()
+{
+   ArrayResize(buySignal, Bars);
+   ArrayResize(sellSignal, Bars);
+   
+   for(int i = 0; i < Bars; i++)
+   {
+      if(vixFix[i] >= ThresholdBuy)
+         buySignal[i] = true;
+      else
+         buySignal[i] = false;
+      
+      if(vixFix[i] <= ThresholdSell)
+         sellSignal[i] = true;
+      else
+         sellSignal[i] = false;
+   }
+}
+
+//+------------------------------------------------------------------+
+//| Custom indicator: Plot buy signals on MT4 chart                   |
+//+------------------------------------------------------------------+
+void PlotBuySignals()
+{
+   for(int i = 0; i < Bars; i++)
+   {
+      if(buySignal[i])
+         PlotArrow(i, Low[i] - 10 * Point, 'Buy');
+   }
+}
+
+//+------------------------------------------------------------------+
+//| Custom indicator: Plot sell signals on MT4 chart                  |
+//+------------------------------------------------------------------+
+void PlotSellSignals()
+{
+   for(int i = 0; i < Bars; i++)
+   {
+      if(sellSignal[i])
+         PlotArrow(i, High[i] + 10 * Point, 'Sell');
+   }
+}
+
+//+------------------------------------------------------------------+
+//| Custom indicator: Customize threshold values for buy/sell signals |
+//+------------------------------------------------------------------+
+void CustomizeThresholdValues(double buyThreshold, double sellThreshold)
+{
+   ThresholdBuy = buyThreshold;
+   ThresholdSell = sellThreshold;
+}
+
+//+------------------------------------------------------------------+
+//| Custom indicator: Update Vix Fix indicator and signals in real-time|
+//+------------------------------------------------------------------+
+void UpdateIndicator()
+{
+   CalculateVixFixIndicator();
+   CheckVolatility();
+}
+
+//+------------------------------------------------------------------+
+//| Custom indicator: Initialize the Williams Vix Fix MT4             |
+//+------------------------------------------------------------------+
+int OnInit()
+{
+   IndicatorBuffers(1);
+   IndicatorDigits(Digits);
+   
+   CalculateVixFixIndicator();
+   DisplayVixFixIndicator();
+   CheckVolatility();
+   
+   return(INIT_SUCCEEDED);
+}
+
+//+------------------------------------------------------------------+
+//| Custom indicator: Start the Williams Vix Fix MT4                  |
+//+------------------------------------------------------------------+
+void OnStart()
+{
+   PlotBuySignals();
+   PlotSellSignals();
+}
+
+//+------------------------------------------------------------------+
+//| Custom indicator: Deinitialize the Williams Vix Fix MT4           |
+//+------------------------------------------------------------------+
+void OnDeinit(const int reason)
+{
+   // Clean up and release resources if necessary
+}
